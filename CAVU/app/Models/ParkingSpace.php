@@ -24,12 +24,4 @@ class ParkingSpace extends Model
     {
         return $this->hasMany(Booking::class);
     }
-
-    /**
-     * Uses ParkingSpaceService logic to get price per day
-     */
-    public function calculatePricePerDay($date)
-    {
-        return $this->parkingSpaceService->calculatePricePerDay($date);
-    }
 }

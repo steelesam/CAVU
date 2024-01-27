@@ -24,6 +24,8 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/create-user', [UserController::class, 'createUser']);
 Route::get('/parking-space-availability', [ParkingSpaceController::class, 'checkParkingSpaceAvailability']);
 Route::get('/parking-space-availability-single-day', [ParkingSpaceController::class, 'checkParkingSpaceAvailabilityForSingleDay']);
+Route::get('/calculate-price-per-day', [ParkingSpaceController::class, 'calculatePricePerDay']);
+Route::get('/calculate-total-price-for-range', [ParkingSpaceController::class, 'calculateTotalPriceForDateRange']);
 
 /**
  * Authenticated routes. A Bearer token needs to be generated through login (through postman or whichever tool you're using to test) and the passed in the auth headers

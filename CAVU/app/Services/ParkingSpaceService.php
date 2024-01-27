@@ -98,4 +98,25 @@ class ParkingSpaceService
             return $isWeekend ? 80 : 60;
         }
     }
+
+    /**
+     * Calculates the total price for a given date range based on the pricing logic.
+     *
+     * @param  string  $from  The starting date of the date range.
+     * @param  string  $to  The ending date of the date range.
+     * @return int The calculated total price for the date range.
+     */
+    public function calculateTotalPriceForDateRange(string $from, string $to): int
+    {
+        $totalPrice = 0;
+        $fromDate = Carbon::parse($from);
+        $toDate = Carbon::parse($to);
+
+        while ($fromDate <= $toDate) {
+            $totalPrice += $this->calculatePricePerDay($fromDate->toDateString());
+            $fromDate->addDay();
+        }
+
+        return $totalPrice;
+    }
 }

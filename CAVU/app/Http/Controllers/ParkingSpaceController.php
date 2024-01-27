@@ -76,4 +76,49 @@ class ParkingSpaceController extends Controller
 
         return response()->json(['available_spaces_count' => $availableSpacesCount]);
     }
+
+    /**
+     * Calculate the price per day based on the date using ParkingSpaceService logic.
+     *
+     * @param  string  $date  The date for which to calculate the price.
+     * @return JsonResponse The JSON response containing the calculated price per day.
+     */
+    public function calculatePricePerDay(Request $request): JsonResponse
+    {
+        $validatedData = $request->validate([
+            'date' => 'required|date',
+        ]);
+
+        $date = $validatedData['date'];
+
+        $pricePerDay = $this->parkingSpaceService->calculatePricePerDay($date);
+
+        return response()->json(['price_per_day' => $pricePerDay]);
+    }
+
+    /**
+     * Calculates the total price for a parking space based on the date range.
+     *
+     * @param  Request  $request  The HTTP request containing the date range.
+     * @return JsonResponse A JSON response containing the calculated total price.
+     */
+    public function calculateTotalPriceForDateRange(Request $request): JsonResponse
+    {
+        try {
+            $validatedData = $request->validate([
+                'from' => 'required|date',
+                'to' => 'required|date|after:from',
+            ]);
+
+            $from = $validatedData['from'];
+            $to = $validatedData['to'];
+
+            $totalPrice = $this->parkingSpaceService->calculateTotalPriceForDateRange($from, $to);
+
+            return response()->json(['total_price' => $totalPrice]);
+
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()]);
+        }
+    }
 }
