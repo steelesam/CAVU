@@ -23,9 +23,10 @@ class ParkingSpaceController extends Controller
     /**
      * Creates a new parking space.
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @param  Request  $request  The incoming HTTP request.
+     * @return JsonResponse JSON response containing the created parking space and success message.
      */
-    public function createParkingSpace(Request $request)
+    public function createParkingSpace(Request $request): JsonResponse
     {
         $validatedData = $request->validate([
             'available' => 'required|int',
@@ -38,6 +39,9 @@ class ParkingSpaceController extends Controller
 
     /**
      * Checks the availability of parking spaces for the given date range.
+     *
+     * @param  Request  $request  The incoming HTTP request.
+     * @return JsonResponse JSON response containing the count of available parking spaces.
      */
     public function checkParkingSpaceAvailability(Request $request): JsonResponse
     {

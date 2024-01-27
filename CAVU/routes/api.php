@@ -29,9 +29,9 @@ Route::get('/parking-space-availability', [ParkingSpaceController::class, 'check
  */
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/create-booking', [BookingController::class, 'createBooking']);
+    Route::put('/amend-booking/{id}', [BookingController::class, 'amendBooking']);
+    Route::delete('/cancel-booking/{id}', [BookingController::class, 'cancelBooking']);
     Route::get('/user/bookings', [BookingController::class, 'getUserBookings']);
-    Route::put('/bookings/{id}', [BookingController::class, 'amendBooking']);
-    Route::delete('/bookings/{id}', [BookingController::class, 'cancelBooking']);
     Route::post('/logout', [AuthController::class, 'logout']);
 });
 

@@ -29,38 +29,23 @@ class BookingService
      */
     public function createBooking(array $data, User $user): Booking
     {
-       // $availableSpacesCount = $this->parkingSpaceService->checkParkingSpaceAvailability($data['from'], $data['to']);
+        // $availableSpacesCount = $this->parkingSpaceService->checkParkingSpaceAvailability($data['from'], $data['to']);
 
         //if ($availableSpacesCount < 10) {
-            try {
-                $booking = new Booking($data);
-                $booking->user()->associate($user);
+        try {
+            $booking = new Booking($data);
+            $booking->user()->associate($user);
 
-                // Set parking space later in associateParkingSpace
-                $this->parkingSpaceService->associateParkingSpace($booking);
+            // Set parking space later in associateParkingSpace
+            $this->parkingSpaceService->associateParkingSpace($booking);
 
-                $booking->save();
+            $booking->save();
 
-                return $booking;
-            } catch (\Exception $exception) {
-                throw $exception;
-            }
+            return $booking;
+        } catch (\Exception $exception) {
+            throw $exception;
+        }
         //}
-    }
-
-    /**
-     * Cancels an existing booking.
-     *
-     * @param  int  $bookingId  The ID of the booking to be canceled.
-     * @return JsonResponse JSON response indicating the success of the cancellation.
-     */
-    public function cancelBooking(int $bookingId): JsonResponse
-    {
-        $booking = Booking::findOrFail($bookingId);
-
-        $booking->delete();
-
-        return response()->json(['message' => 'Booking cancelled successfully']);
     }
 
     /**
@@ -77,6 +62,27 @@ class BookingService
         $booking->update($data);
 
         return response()->json(['booking' => $booking]);
+    }
+
+    /**
+     * Cancels an existing booking.
+     *
+     * @param  int  $bookingId  The ID of the booking to be canceled.
+     * @return JsonResponse JSON response indicating the success of the cancellation.
+     */
+    public function cancelBooking(int $bookingId): JsonResponse
+    {
+        $booking = Booking::with('parkingSpace')->findOrFail($bookingId);
+
+        // Soft deletes being performed so we can still view cancelled bookings after the cancellation has occured, useful for analytics, customer srevice etc
+        $booking->delete();
+    
+        // Make the associated parking space available again
+        if ($booking->parkingSpace) {
+            $booking->parkingSpace->update(['available' => 1]);
+        }
+
+        return response()->json(['message' => 'Booking cancelled successfully']);
     }
 
     /**

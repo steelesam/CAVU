@@ -31,7 +31,7 @@ class ParkingSpaceService
      */
     public function checkParkingSpaceAvailability(string $from, string $to): int
     {
-   
+
         $currentBookingsForDateCount = Booking::whereBetween('from', [$from, $to])
             ->orWhereBetween('to', [$from, $to])
             ->count();
