@@ -67,13 +67,11 @@ class BookingController extends Controller
      */
     public function amendBooking(Request $request, int $id): JsonResponse
     {
-        $request->validate([
+        $data = $request->validate([
             'from' => 'date',
             'to' => 'date|after:from',
-            // Add more validation rules as needed
         ]);
 
-        $data = $request->validated();
         $booking = $this->bookingService->amendBooking($id, $data);
 
         return response()->json(['booking' => $booking]);

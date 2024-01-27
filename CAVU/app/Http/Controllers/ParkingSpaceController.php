@@ -57,4 +57,23 @@ class ParkingSpaceController extends Controller
 
         return response()->json(['available_spaces_count' => $availableSpacesCount]);
     }
+
+    /**
+     * Checks the availability of parking spaces for the given date.
+     *
+     * @param  Request  $request  The HTTP request containing the date parameter.
+     * @return JsonResponse A JSON response of count of available parking spaces.
+     */
+    public function checkParkingSpaceAvailabilityForSingleDay(Request $request): JsonResponse
+    {
+        $validatedData = $request->validate([
+            'date' => 'required|date',
+        ]);
+
+        $date = $validatedData['date'];
+
+        $availableSpacesCount = $this->parkingSpaceService->checkParkingSpaceAvailabilityForSingleDay($date);
+
+        return response()->json(['available_spaces_count' => $availableSpacesCount]);
+    }
 }

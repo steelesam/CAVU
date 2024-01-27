@@ -29,23 +29,18 @@ class BookingService
      */
     public function createBooking(array $data, User $user): Booking
     {
-        // $availableSpacesCount = $this->parkingSpaceService->checkParkingSpaceAvailability($data['from'], $data['to']);
-
-        //if ($availableSpacesCount < 10) {
         try {
             $booking = new Booking($data);
             $booking->user()->associate($user);
-
-            // Set parking space later in associateParkingSpace
             $this->parkingSpaceService->associateParkingSpace($booking);
-
             $booking->save();
 
             return $booking;
+
         } catch (\Exception $exception) {
+
             throw $exception;
         }
-        //}
     }
 
     /**
@@ -53,12 +48,16 @@ class BookingService
      *
      * @param  int  $bookingId  The ID of the booking to be amended.
      * @param  array  $data  The data containing the amendments to be applied to the booking.
-     * @return JsonResponse JSON response containing the amended booking details.
+     * @return JsonResponse JSON response containing the amended booking details or an error message.
      */
     public function amendBooking(int $bookingId, array $data): JsonResponse
     {
         $booking = Booking::findOrFail($bookingId);
+        $availableSpacesCount = $this->parkingSpaceService->checkParkingSpaceAvailability($data['from'], $data['to']);
 
+        if ($availableSpacesCount < 1) {
+            return response()->json(['error' => 'Not enough available spaces for the amended dates.']);
+        }
         $booking->update($data);
 
         return response()->json(['booking' => $booking]);
@@ -73,10 +72,9 @@ class BookingService
     public function cancelBooking(int $bookingId): JsonResponse
     {
         $booking = Booking::with('parkingSpace')->findOrFail($bookingId);
-
         // Soft deletes being performed so we can still view cancelled bookings after the cancellation has occured, useful for analytics, customer srevice etc
         $booking->delete();
-    
+
         // Make the associated parking space available again
         if ($booking->parkingSpace) {
             $booking->parkingSpace->update(['available' => 1]);

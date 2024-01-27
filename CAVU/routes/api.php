@@ -23,6 +23,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/create-user', [UserController::class, 'createUser']);
 Route::get('/parking-space-availability', [ParkingSpaceController::class, 'checkParkingSpaceAvailability']);
+Route::get('/parking-space-availability-single-day', [ParkingSpaceController::class, 'checkParkingSpaceAvailabilityForSingleDay']);
 
 /**
  * Authenticated routes. A Bearer token needs to be generated through login (through postman or whichever tool you're using to test) and the passed in the auth headers
