@@ -2,15 +2,15 @@
 
 namespace App\Models;
 
+use App\Services\ParkingSpaceService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Services\ParkingSpaceService;
 
 class ParkingSpace extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['price_per_day'];
+    protected $fillable = ['available'];
 
     protected $parkingSpaceService;
 
@@ -18,6 +18,11 @@ class ParkingSpace extends Model
     {
         parent::__construct($attributes);
         $this->parkingSpaceService = app(ParkingSpaceService::class);
+    }
+
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class);
     }
 
     /**

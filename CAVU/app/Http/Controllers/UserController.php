@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Models\User;
 use App\Services\UserService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
-    protected $userService;
+    protected UserService $userService;
 
     public function __construct(UserService $userService)
     {
@@ -15,12 +17,9 @@ class UserController extends Controller
     }
 
     /**
-     * Create a new user.
-     *
-     * @param  Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * Calls UserService to create a new user.
      */
-    public function createUser(Request $request)
+    public function createUser(Request $request): JsonResponse
     {
         $validatedData = $request->validate([
             'name' => 'required|string',
@@ -33,4 +32,3 @@ class UserController extends Controller
         return response()->json(['user' => $user, 'message' => 'User created successfully'], 201);
     }
 }
-

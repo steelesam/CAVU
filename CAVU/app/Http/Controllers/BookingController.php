@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Services\BookingService;
 use Illuminate\Http\Request;
 
@@ -16,37 +15,17 @@ class BookingController extends Controller
     }
 
     /**
-     * 
-     */
-    public function getParkingSpacesAvailability(Request $request)
-    {
-        $request->validate([
-            'from' => 'required|date',
-            'to' => 'required|date|after:from',
-        ]);
-
-        $from = $request->input('from');
-        $to = $request->input('to');
-        $availableSpaces = $this->bookingService->getParkingSpacesAvailability($from, $to);
-
-        return response()->json(['available_spaces' => $availableSpaces]);
-    }
-
-    /**
-     * 
+     * Calls BookingService to get all User bookings
      */
     public function getUserBookings()
     {
-        $user = auth()->user();
-        // No validation needed for this endpoint
-
-        $bookings = $user->bookings;
+        $bookings = $this->bookingService->getUserBookings();
 
         return response()->json(['bookings' => $bookings]);
     }
 
     /**
-     * 
+     * Calls BookingService to create booking
      */
     public function createBooking(Request $request)
     {
@@ -59,10 +38,10 @@ class BookingController extends Controller
 
             $user = auth()->user();
             $booking = $this->bookingService->createBooking($data, $user);
-            
+
             return response()->json(['booking' => $booking]);
 
-        } catch (\Illuminate\Validation\ValidationException $exception){
+        } catch (Exception $exception) {
 
             return response()->json(['error' => $exception->getMessage()]);
 
@@ -71,7 +50,7 @@ class BookingController extends Controller
     }
 
     /**
-     * 
+     * Calls BookingService to amend booking
      */
     public function amendBooking(Request $request, $id)
     {
@@ -88,7 +67,7 @@ class BookingController extends Controller
     }
 
     /**
-     * 
+     * Calls BookingService to cancel booking
      */
     public function cancelBooking($id)
     {

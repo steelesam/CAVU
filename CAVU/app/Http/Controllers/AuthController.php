@@ -8,11 +8,9 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    
     /**
      * Handle an incoming auth request
      *
-     * @param  Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function login(Request $request)
@@ -22,7 +20,7 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        if (!Auth::attempt($request->only('email', 'password'))) {
+        if (! Auth::attempt($request->only('email', 'password'))) {
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
             ]);
@@ -37,7 +35,6 @@ class AuthController extends Controller
     /**
      * Log the user out
      *
-     * @param  Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function logout(Request $request)
@@ -47,4 +44,3 @@ class AuthController extends Controller
         return response()->json(['message' => 'Successfully logged out']);
     }
 }
-

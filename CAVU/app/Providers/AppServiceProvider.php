@@ -18,6 +18,10 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(UserService::class, function ($app) {
             return new UserService();
         });
+
+        $this->app->singleton(ParkingSpaceService::class, function ($app) {
+            return new ParkingSpaceService();
+        });
     }
 
     /**

@@ -4,60 +4,73 @@ namespace App\Services;
 
 use App\Models\Booking;
 use App\Models\User;
-use App\Models\ParkingSpace;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\JsonResponse;
 
 class BookingService
 {
     protected $parkingSpaceService;
 
+    /**
+     * Constructor for the BookingService class.
+     */
     public function __construct(ParkingSpaceService $parkingSpaceService)
     {
         $this->parkingSpaceService = $parkingSpaceService;
     }
 
     /**
-     * Creates a booking for the user
+     * Creates a booking for the user.
+     *
+     * @param  array  $data  The data for creating the booking.
+     * @param  User  $user  The user for whom the booking is being created.
+     * @return Booking The created Booking instance.
+     *
+     * @throws NoAvailableParkingSpacesException
      */
     public function createBooking(array $data, User $user): Booking
     {
-        // Check there are actually available parking spaces or not
-        $bookedSpacesCount = Booking::where(function (Builder $query) use ($data) {
-        $query->where('from', '>=', $data['from'])
-            ->where('from', '<', $data['to'])
-            ->orWhere(function (Builder $query) use ($data) {
-                $query->where('to', '>', $data['from'])
-                    ->where('to', '<=', $data['to']);
-            });
-        })->count();
+       // $availableSpacesCount = $this->parkingSpaceService->checkParkingSpaceAvailability($data['from'], $data['to']);
 
-        if ($bookedSpacesCount >= 10) {
-            throw \Illuminate\Validation\ValidationException::withMessages(['error' => 'No parking spaces currently available.']);
-        }
+        //if ($availableSpacesCount < 10) {
+            try {
+                $booking = new Booking($data);
+                $booking->user()->associate($user);
 
-        $booking = $user->bookings()->create($data);
+                // Set parking space later in associateParkingSpace
+                $this->parkingSpaceService->associateParkingSpace($booking);
 
-        return $booking;
+                $booking->save();
+
+                return $booking;
+            } catch (\Exception $exception) {
+                throw $exception;
+            }
+        //}
     }
 
     /**
-     * Cancels an existing booking
+     * Cancels an existing booking.
+     *
+     * @param  int  $bookingId  The ID of the booking to be canceled.
+     * @return JsonResponse JSON response indicating the success of the cancellation.
      */
-    public function cancelBooking(int $bookingId)
+    public function cancelBooking(int $bookingId): JsonResponse
     {
         $booking = Booking::findOrFail($bookingId);
 
         $booking->delete();
 
         return response()->json(['message' => 'Booking cancelled successfully']);
-        
     }
 
     /**
-     * Amends the details of an existing booking
+     * Amends the details of an existing booking.
+     *
+     * @param  int  $bookingId  The ID of the booking to be amended.
+     * @param  array  $data  The data containing the amendments to be applied to the booking.
+     * @return JsonResponse JSON response containing the amended booking details.
      */
-    public function amendBooking(int $bookingId, array $data): Booking
+    public function amendBooking(int $bookingId, array $data): JsonResponse
     {
         $booking = Booking::findOrFail($bookingId);
 
@@ -67,32 +80,15 @@ class BookingService
     }
 
     /**
-     * Get all bookings by a customer
+     * Get all bookings by a customer.
+     *
+     * @return JsonResponse JSON response containing the user details and their bookings.
      */
-    public function getUserBookings()
+    public function getUserBookings(): JsonResponse
     {
         $user = auth()->user();
         $bookings = $user->bookings;
 
-        return response()->json(['bookings' => $bookings]);
-    }
-
-    /**
-     * Retrieves the spaces that are available currently. 
-     */
-    public function getParkingSpacesAvailability(string $from, string $to): Collection
-    {
-        $availableSpaces = ParkingSpace::whereDoesntHave('bookings', function (Builder $query) use ($from, $to) {
-            $query->where(function (Builder $query) use ($from, $to) {
-                $query->where('from', '>=', $from)
-                    ->where('from', '<', $to)
-                    ->orWhere(function (Builder $query) use ($from, $to) {
-                        $query->where('to', '>', $from)
-                            ->where('to', '<=', $to);
-                    });
-            });
-        })->get();
-
-        return response()->json(['available_spaces' => $availableSpaces]);
+        return response()->json(['user' => $user, 'bookings' => $bookings]);
     }
 }
