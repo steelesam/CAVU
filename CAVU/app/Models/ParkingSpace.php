@@ -15,6 +15,7 @@ class ParkingSpace extends Model
     /**
      * Get the bookings associated with the parking space.
      * A parking space can have many bookings.
+     *
      * @return HasMany
      */
     public function bookings()

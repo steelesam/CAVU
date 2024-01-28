@@ -37,7 +37,7 @@ Route::get('/calculate-total-price-for-range', [ParkingSpaceController::class, '
 Route::post('/create-parking-space', [ParkingSpaceController::class, 'createParkingSpace'])->name('create-parking-space');
 
 /**
- * Authenticated routes. A Bearer token needs to be generated through login (through postman or whichever tool you're using to test) and the passed in the auth headers
+ * Authenticated routes. Make sure you create a user using the public create-user route then use the Bearer generated to login (through postman or whichever tool you're using to test) and then passed in the auth headers
  */
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/create-booking', [BookingController::class, 'createBooking'])->name('create-booking');
@@ -46,4 +46,3 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/user/bookings', [BookingController::class, 'getUserBookings'])->name('user-bookings');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });
-
