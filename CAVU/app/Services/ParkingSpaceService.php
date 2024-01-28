@@ -5,7 +5,9 @@ namespace App\Services;
 use App\Models\Booking;
 use App\Models\ParkingSpace;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 
 class ParkingSpaceService
 {
@@ -14,12 +16,19 @@ class ParkingSpaceService
      *
      * @param  array  $data  The data for creating the parking space.
      * @return ParkingSpace The created ParkingSpace instance.
+     *
+     * @throws Exception
      */
     public function createParkingSpace(array $data): ParkingSpace
     {
-        $parkingSpace = ParkingSpace::create($data);
+        try {
+            $parkingSpace = ParkingSpace::create($data);
 
-        return $parkingSpace;
+            return $parkingSpace;
+        } catch (\Exception $exception) {
+            Log::error('Error creating parking space: '.$exception->getMessage());
+            throw $exception;
+        }
     }
 
     /**
@@ -28,18 +37,25 @@ class ParkingSpaceService
      * @param  string  $from  The starting date for checking availability.
      * @param  string  $to  The ending date for checking availability.
      * @return JsonResponse A JSON response of count of available parking spaces.
+     *
+     * @throws Exception
      */
     public function checkParkingSpaceAvailability(string $from, string $to): int
     {
-        $currentBookingsForDateCount = Booking::whereBetween('from', [$from, $to])
-            ->orWhereBetween('to', [$from, $to])
-            ->count();
+        try {
+            $currentBookingsForDateCount = Booking::whereBetween('from', [$from, $to])
+                ->orWhereBetween('to', [$from, $to])
+                ->count();
 
-        // Spec only mentions 10 spaces, but due to having the createParkingSpace function there this may change
-        $totalNumberOfParkingSpaces = ParkingSpace::count();
-        $availableSpaces = $totalNumberOfParkingSpaces - $currentBookingsForDateCount;
+            // Spec only mentions 10 spaces, but due to having the createParkingSpace function there this may change
+            $totalNumberOfParkingSpaces = ParkingSpace::count();
+            $availableSpaces = $totalNumberOfParkingSpaces - $currentBookingsForDateCount;
 
-        return $availableSpaces;
+            return $availableSpaces;
+        } catch (\Exception $exception) {
+            Log::error('Error checking parking space availability: '.$exception->getMessage());
+            throw $exception;
+        }
     }
 
     /**
@@ -47,18 +63,25 @@ class ParkingSpaceService
      *
      * @param  string  $date  The date for checking availability.
      * @return JsonResponse A JSON response of count of available parking spaces.
+     *
+     * @throws Exception
      */
     public function checkParkingSpaceAvailabilityForSingleDay(string $date): int
     {
-        $currentBookingsForDateCount = Booking::whereDate('from', '<=', $date)
-            ->whereDate('to', '>=', $date)
-            ->count();
+        try {
+            $currentBookingsForDateCount = Booking::whereDate('from', '<=', $date)
+                ->whereDate('to', '>=', $date)
+                ->count();
 
-        // Spec only mentions 10 spaces, but due to having the createParkingSpace function there this may change
-        $totalNumberOfParkingSpaces = ParkingSpace::count();
-        $availableSpaces = $totalNumberOfParkingSpaces - $currentBookingsForDateCount;
+            // Spec only mentions 10 spaces, but due to having the createParkingSpace function there this may change
+            $totalNumberOfParkingSpaces = ParkingSpace::count();
+            $availableSpaces = $totalNumberOfParkingSpaces - $currentBookingsForDateCount;
 
-        return $availableSpaces;
+            return $availableSpaces;
+        } catch (\Exception $exception) {
+            Log::error('Error checking parking space availability for single day: '.$exception->getMessage());
+            throw $exception;
+        }
     }
 
     /**
@@ -66,16 +89,23 @@ class ParkingSpaceService
      *
      * @param  Booking  $booking  The booking to associate with a parking space.
      * @return void
+     *
+     * @throws Exception
      */
     public function associateParkingSpace(Booking $booking)
     {
-        $parkingSpace = ParkingSpace::where('available', true)->first();
+        try {
+            $parkingSpace = ParkingSpace::where('available', true)->first();
 
-        if ($parkingSpace) {
-            $booking->parking_space_id = $parkingSpace->id;
-            $booking->save();
+            if ($parkingSpace) {
+                $booking->parking_space_id = $parkingSpace->id;
+                $booking->save();
 
-            $parkingSpace->update(['available' => false]);
+                $parkingSpace->update(['available' => false]);
+            }
+        } catch (\Exception $exception) {
+            Log::error('Error associating parking space with booking: '.$exception->getMessage());
+            throw $exception;
         }
     }
 
@@ -84,18 +114,24 @@ class ParkingSpaceService
      *
      * @param  string  $date  The date for which to calculate the price.
      * @return int The calculated price per day.
+     *
+     * @throws Exception
      */
     public function calculatePricePerDay(string $date): int
     {
-        $carbonDate = Carbon::parse($date);
+        try {
+            $carbonDate = Carbon::parse($date);
+            $isWeekend = $carbonDate->isWeekend();
+            $isWinter = $carbonDate->month >= 9 && $carbonDate->month <= 3; // September to March
 
-        $isWeekend = $carbonDate->isWeekend();
-        $isWinter = $carbonDate->month >= 9 && $carbonDate->month <= 3; // September to March
-
-        if ($isWinter) {
-            return $isWeekend ? 70 : 50;
-        } else {
-            return $isWeekend ? 80 : 60;
+            if ($isWinter) {
+                return $isWeekend ? 70 : 50;
+            } else {
+                return $isWeekend ? 80 : 60;
+            }
+        } catch (\Exception $exception) {
+            Log::error('Error calculating price per day: '.$exception->getMessage());
+            throw $exception;
         }
     }
 
@@ -105,18 +141,25 @@ class ParkingSpaceService
      * @param  string  $from  The starting date of the date range.
      * @param  string  $to  The ending date of the date range.
      * @return int The calculated total price for the date range.
+     *
+     * @throws Exception
      */
     public function calculateTotalPriceForDateRange(string $from, string $to): int
     {
-        $totalPrice = 0;
-        $fromDate = Carbon::parse($from);
-        $toDate = Carbon::parse($to);
+        try {
+            $totalPrice = 0;
+            $fromDate = Carbon::parse($from);
+            $toDate = Carbon::parse($to);
 
-        while ($fromDate <= $toDate) {
-            $totalPrice += $this->calculatePricePerDay($fromDate->toDateString());
-            $fromDate->addDay();
+            while ($fromDate <= $toDate) {
+                $totalPrice += $this->calculatePricePerDay($fromDate->toDateString());
+                $fromDate->addDay();
+            }
+
+            return $totalPrice;
+        } catch (\Exception $exception) {
+            Log::error('Error calculating total price for date range: '.$exception->getMessage());
+            throw $exception;
         }
-
-        return $totalPrice;
     }
 }

@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Services\BookingService;
+use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class BookingController extends Controller
 {
@@ -27,9 +30,16 @@ class BookingController extends Controller
      */
     public function getUserBookings(): JsonResponse
     {
-        $bookings = $this->bookingService->getUserBookings();
+        try {
+            $bookings = $this->bookingService->getUserBookings();
 
-        return response()->json(['bookings' => $bookings]);
+            return response()->json(['bookings' => $bookings]);
+
+        } catch (Exception $exception) {
+            Log::error('Error retrieving user bookings: '.$exception->getMessage());
+
+            return response()->json(['error' => 'Internal Server Error'], 500);
+        }
     }
 
     /**
@@ -51,10 +61,13 @@ class BookingController extends Controller
 
             return response()->json(['booking' => $booking]);
 
-        } catch (\Exception $exception) {
+        } catch (ValidationException $validationException) {
+            return response()->json(['error' => $validationException->errors()], 422);
 
-            return response()->json(['error' => $exception->getMessage()]);
+        } catch (Exception $exception) {
+            Log::error('Error creating booking: '.$exception->getMessage());
 
+            return response()->json(['error' => 'Internal Server Error'], 500);
         }
     }
 
@@ -67,14 +80,24 @@ class BookingController extends Controller
      */
     public function amendBooking(Request $request, int $id): JsonResponse
     {
-        $data = $request->validate([
-            'from' => 'date',
-            'to' => 'date|after:from',
-        ]);
+        try {
+            $data = $request->validate([
+                'from' => 'date',
+                'to' => 'date|after:from',
+            ]);
 
-        $booking = $this->bookingService->amendBooking($id, $data);
+            $booking = $this->bookingService->amendBooking($id, $data);
 
-        return response()->json(['booking' => $booking]);
+            return response()->json(['booking' => $booking]);
+
+        } catch (ValidationException $validationException) {
+            return response()->json(['error' => $validationException->errors()], 422);
+
+        } catch (Exception $exception) {
+            Log::error('Error amending booking: '.$exception->getMessage());
+
+            return response()->json(['error' => 'Internal Server Error'], 500);
+        }
     }
 
     /**
@@ -85,8 +108,15 @@ class BookingController extends Controller
      */
     public function cancelBooking(int $id): JsonResponse
     {
-        $this->bookingService->cancelBooking($id);
+        try {
+            $this->bookingService->cancelBooking($id);
 
-        return response()->json(['message' => 'Booking cancelled successfully']);
+            return response()->json(['message' => 'Booking cancelled successfully']);
+
+        } catch (Exception $exception) {
+            Log::error('Error cancelling booking: '.$exception->getMessage());
+
+            return response()->json(['error' => 'Internal Server Error'], 500);
+        }
     }
 }

@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Services\ParkingSpaceService;
+use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class ParkingSpaceController extends Controller
 {
@@ -28,13 +31,23 @@ class ParkingSpaceController extends Controller
      */
     public function createParkingSpace(Request $request): JsonResponse
     {
-        $validatedData = $request->validate([
-            'available' => 'required|int',
-        ]);
+        try {
+            $validatedData = $request->validate([
+                'available' => 'required|int',
+            ]);
 
-        $parkingSpace = $this->parkingSpaceService->createParkingSpace($validatedData);
+            $parkingSpace = $this->parkingSpaceService->createParkingSpace($validatedData);
 
-        return response()->json(['parking_space' => $parkingSpace, 'message' => 'Parking space created successfully'], 201);
+            return response()->json(['parking_space' => $parkingSpace, 'message' => 'Parking space created successfully'], 201);
+
+        } catch (ValidationException $validationException) {
+            return response()->json(['error' => $validationException->errors()], 422);
+
+        } catch (Exception $exception) {
+            Log::error('Error creating parking space: '.$exception->getMessage());
+
+            return response()->json(['error' => 'Internal Server Error'], 500);
+        }
     }
 
     /**
@@ -45,17 +58,27 @@ class ParkingSpaceController extends Controller
      */
     public function checkParkingSpaceAvailability(Request $request): JsonResponse
     {
-        $validatedData = $request->validate([
-            'from' => 'required|date',
-            'to' => 'required|date|after:from',
-        ]);
+        try {
+            $validatedData = $request->validate([
+                'from' => 'required|date',
+                'to' => 'required|date|after:from',
+            ]);
 
-        $from = $validatedData['from'];
-        $to = $validatedData['to'];
+            $from = $validatedData['from'];
+            $to = $validatedData['to'];
 
-        $availableSpacesCount = $this->parkingSpaceService->checkParkingSpaceAvailability($from, $to);
+            $availableSpacesCount = $this->parkingSpaceService->checkParkingSpaceAvailability($from, $to);
 
-        return response()->json(['available_spaces_count' => $availableSpacesCount]);
+            return response()->json(['available_spaces_count' => $availableSpacesCount]);
+
+        } catch (ValidationException $validationException) {
+            return response()->json(['error' => $validationException->errors()], 422);
+
+        } catch (Exception $exception) {
+            Log::error('Error checking parking space availability: '.$exception->getMessage());
+
+            return response()->json(['error' => 'Internal Server Error'], 500);
+        }
     }
 
     /**
@@ -66,34 +89,54 @@ class ParkingSpaceController extends Controller
      */
     public function checkParkingSpaceAvailabilityForSingleDay(Request $request): JsonResponse
     {
-        $validatedData = $request->validate([
-            'date' => 'required|date',
-        ]);
+        try {
+            $validatedData = $request->validate([
+                'date' => 'required|date',
+            ]);
 
-        $date = $validatedData['date'];
+            $date = $validatedData['date'];
 
-        $availableSpacesCount = $this->parkingSpaceService->checkParkingSpaceAvailabilityForSingleDay($date);
+            $availableSpacesCount = $this->parkingSpaceService->checkParkingSpaceAvailabilityForSingleDay($date);
 
-        return response()->json(['available_spaces_count' => $availableSpacesCount]);
+            return response()->json(['available_spaces_count' => $availableSpacesCount]);
+
+        } catch (ValidationException $validationException) {
+            return response()->json(['error' => $validationException->errors()], 422);
+
+        } catch (Exception $exception) {
+            Log::error('Error checking parking space availability for single day: '.$exception->getMessage());
+
+            return response()->json(['error' => 'Internal Server Error'], 500);
+        }
     }
 
     /**
      * Calculate the price per day based on the date using ParkingSpaceService logic.
      *
-     * @param  string  $date  The date for which to calculate the price.
+     * @param  Request  $request  The incoming HTTP request.
      * @return JsonResponse The JSON response containing the calculated price per day.
      */
     public function calculatePricePerDay(Request $request): JsonResponse
     {
-        $validatedData = $request->validate([
-            'date' => 'required|date',
-        ]);
+        try {
+            $validatedData = $request->validate([
+                'date' => 'required|date',
+            ]);
 
-        $date = $validatedData['date'];
+            $date = $validatedData['date'];
 
-        $pricePerDay = $this->parkingSpaceService->calculatePricePerDay($date);
+            $pricePerDay = $this->parkingSpaceService->calculatePricePerDay($date);
 
-        return response()->json(['price_per_day' => $pricePerDay]);
+            return response()->json(['price_per_day' => $pricePerDay]);
+
+        } catch (ValidationException $validationException) {
+            return response()->json(['error' => $validationException->errors()], 422);
+
+        } catch (Exception $exception) {
+            Log::error('Error calculating price per day: '.$exception->getMessage());
+
+            return response()->json(['error' => 'Internal Server Error'], 500);
+        }
     }
 
     /**
@@ -117,8 +160,13 @@ class ParkingSpaceController extends Controller
 
             return response()->json(['total_price' => $totalPrice]);
 
-        } catch (Exception $e) {
-            return response()->json(['error' => $e->getMessage()]);
+        } catch (ValidationException $validationException) {
+            return response()->json(['error' => $validationException->errors()], 422);
+
+        } catch (Exception $exception) {
+            Log::error('Error calculating total price for date range: '.$exception->getMessage());
+
+            return response()->json(['error' => 'Internal Server Error'], 500);
         }
     }
 }

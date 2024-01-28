@@ -4,7 +4,9 @@ namespace App\Services;
 
 use App\Models\Booking;
 use App\Models\User;
+use Exception;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 
 class BookingService
 {
@@ -25,7 +27,7 @@ class BookingService
      * @param  User  $user  The user for whom the booking is being created.
      * @return Booking The created Booking instance.
      *
-     * @throws NoAvailableParkingSpacesException
+     * @throws Exception
      */
     public function createBooking(array $data, User $user): Booking
     {
@@ -38,7 +40,7 @@ class BookingService
             return $booking;
 
         } catch (\Exception $exception) {
-
+            Log::error('Error creating booking: '.$exception->getMessage());
             throw $exception;
         }
     }
@@ -49,18 +51,26 @@ class BookingService
      * @param  int  $bookingId  The ID of the booking to be amended.
      * @param  array  $data  The data containing the amendments to be applied to the booking.
      * @return JsonResponse JSON response containing the amended booking details or an error message.
+     *
+     * @throws Exception
      */
     public function amendBooking(int $bookingId, array $data): JsonResponse
     {
-        $booking = Booking::findOrFail($bookingId);
-        $availableSpacesCount = $this->parkingSpaceService->checkParkingSpaceAvailability($data['from'], $data['to']);
+        try {
+            $booking = Booking::findOrFail($bookingId);
+            $availableSpacesCount = $this->parkingSpaceService->checkParkingSpaceAvailability($data['from'], $data['to']);
 
-        if ($availableSpacesCount < 1) {
-            return response()->json(['error' => 'Not enough available spaces for the amended dates.']);
+            if ($availableSpacesCount < 1) {
+                return response()->json(['error' => 'Not enough available spaces for the amended dates.']);
+            }
+            $booking->update($data);
+
+            return response()->json(['booking' => $booking]);
+
+        } catch (\Exception $exception) {
+            Log::error('Error amending booking: '.$exception->getMessage());
+            throw $exception;
         }
-        $booking->update($data);
-
-        return response()->json(['booking' => $booking]);
     }
 
     /**
@@ -68,31 +78,48 @@ class BookingService
      *
      * @param  int  $bookingId  The ID of the booking to be canceled.
      * @return JsonResponse JSON response indicating the success of the cancellation.
+     *
+     * @throws Exception
      */
     public function cancelBooking(int $bookingId): JsonResponse
     {
-        $booking = Booking::with('parkingSpace')->findOrFail($bookingId);
-        // Soft deletes being performed so we can still view cancelled bookings after the cancellation has occured, useful for analytics, customer srevice etc
-        $booking->delete();
+        try {
+            $booking = Booking::with('parkingSpace')->findOrFail($bookingId);
 
-        // Make the associated parking space available again
-        if ($booking->parkingSpace) {
-            $booking->parkingSpace->update(['available' => 1]);
+            // Soft deletes being performed so we can still view cancelled bookings after the cancellation has occurred, useful for analytics, customer service, etc.
+            $booking->delete();
+
+            // Make the associated parking space available again
+            if ($booking->parkingSpace) {
+                $booking->parkingSpace->update(['available' => 1]);
+            }
+
+            return response()->json(['message' => 'Booking canceled successfully']);
+
+        } catch (\Exception $exception) {
+            Log::error('Error canceling booking: '.$exception->getMessage());
+            throw $exception;
         }
-
-        return response()->json(['message' => 'Booking cancelled successfully']);
     }
 
     /**
      * Get all bookings by a customer.
      *
      * @return JsonResponse JSON response containing the user details and their bookings.
+     *
+     * @throws Exception
      */
     public function getUserBookings(): JsonResponse
     {
-        $user = auth()->user();
-        $bookings = $user->bookings;
+        try {
+            $user = auth()->user();
+            $bookings = $user->bookings;
 
-        return response()->json(['user' => $user, 'bookings' => $bookings]);
+            return response()->json(['user' => $user, 'bookings' => $bookings]);
+
+        } catch (\Exception $exception) {
+            Log::error('Error retrieving user bookings: '.$exception->getMessage());
+            throw $exception;
+        }
     }
 }
