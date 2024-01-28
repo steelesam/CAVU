@@ -36,7 +36,6 @@ class BookingServiceTest extends TestCase
             'from' => '2024-01-01',
             'to' => '2024-01-03',
         ];
-        
 
         $booking = $this->bookingService->createBooking($bookingData, $user);
 
@@ -46,7 +45,7 @@ class BookingServiceTest extends TestCase
             'from' => '2024-01-01',
             'to' => '2024-01-03',
             'user_id' => $user->id,
-            'parking_space_id' => $booking->parking_space_id
+            'parking_space_id' => $booking->parking_space_id,
         ]);
     }
 
